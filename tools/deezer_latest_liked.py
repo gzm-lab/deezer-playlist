@@ -193,6 +193,7 @@ def main():
     parser = argparse.ArgumentParser(description="Récupère le dernier titre ajouté dans une playlist Deezer")
     parser.add_argument("--playlist", "-p", default=DEFAULT_PLAYLIST_NAME, help='Nom de la playlist (défaut: "Coup de coeur")')
     parser.add_argument("--no-open", action="store_true", help="Ne pas ouvrir automatiquement le navigateur")
+    parser.add_argument("--force-auth", action="store_true", help="Forcer une nouvelle authentification OAuth même si un token est en cache")
     parser.add_argument("--save-token", action="store_true", help="Sauvegarder l access token dans .deezer_token.json (obsolète, le token est sauvegardé par défaut)")
     parser.add_argument("--no-save", action="store_true", help="Ne pas sauvegarder l'access token sur disque")
     args = parser.parse_args()
@@ -205,7 +206,7 @@ def main():
     cached = load_cached_token()
     if env_token:
         access_token = env_token
-    elif cached and token_is_valid(cached):
+    elif (not args.force_auth) and cached and token_is_valid(cached):
         access_token = cached.get("access_token")
         print("Utilisation du token mis en cache.")
     else:
@@ -217,7 +218,8 @@ def main():
         httpd = start_local_server(host, port, path)
         redirect_uri = f"{parsed.scheme}://{host}:{port}{path}" if parsed.scheme else f"http://{host}:{port}{path}"
 
-        perms = "basic_access,manage_library,delete_library"
+        # Request offline_access so Deezer can return a long-lived token (expires may be 0).
+        perms = "basic_access,manage_library,delete_library,offline_access"
         auth_url = build_auth_url(APP_ID, redirect_uri, perms=perms)
 
         print("Ouvrir la page d autorisation Deezer...")
@@ -248,6 +250,8 @@ def main():
         if not access_token:
             print("Erreur lors de la récupération de l access token:", token_json)
             return
+        expires = token_json.get("expires")
+        print(f"Token reçu (expires={expires})")
         if not args.no_save:
             try:
                 save_token(token_json)

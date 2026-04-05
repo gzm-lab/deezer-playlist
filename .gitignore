@@ -12,6 +12,7 @@ coverage.xml
 .vscode/
 
 .deezer_token.json
+.deezer_token*.json
 .mb_cache.json
 
 previews/
