@@ -217,7 +217,7 @@ def main():
         httpd = start_local_server(host, port, path)
         redirect_uri = f"{parsed.scheme}://{host}:{port}{path}" if parsed.scheme else f"http://{host}:{port}{path}"
 
-        perms = "basic_access,manage_library"
+        perms = "basic_access,manage_library,delete_library"
         auth_url = build_auth_url(APP_ID, redirect_uri, perms=perms)
 
         print("Ouvrir la page d autorisation Deezer...")

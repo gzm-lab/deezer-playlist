@@ -56,7 +56,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", "-i", default="clustering_vectors.json", help="Input vector JSON file")
     parser.add_argument("--output", "-o", default="clusters.json", help="Output cluster JSON file")
-    parser.add_argument("--clusters", "-k", type=int, default=4, help="Number of clusters")
+    parser.add_argument("--clusters", "-k", type=int, default=12, help="Number of clusters")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()
 
