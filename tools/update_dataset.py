@@ -6,6 +6,7 @@ from pathlib import Path
 import requests
 import time
 import sys
+from datetime import datetime
 from core.audio_features import analyze_audio
 from core.deezer_api import get_track_preview
 
@@ -64,6 +65,13 @@ def main():
 
     print(f"Current liked tracks: {len(current_tracks)}")
 
+    # Guardrail: if Deezer temporarily returns an empty library, avoid wiping the dataset.
+    if len(current_tracks) == 0 and len(existing_dataset) > 0:
+        print("\n❌ Deezer returned 0 liked tracks while local dataset is non-empty.")
+        print("   Aborting to avoid wiping final_dataset.json.")
+        print("   Re-authenticate with: python -m tools.deezer_latest_liked")
+        sys.exit(1)
+
     new_ids = current_ids - existing_ids
     removed_ids = existing_ids - current_ids
 
@@ -74,6 +82,11 @@ def main():
     if not new_ids and not removed_ids:
         print("\n✅ No changes - dataset is up to date!")
         return
+
+    # Keep a timestamped backup before applying destructive changes.
+    backup_path = Path(f"final_dataset.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+    backup_path.write_text(json.dumps(existing_dataset, ensure_ascii=False, indent=2))
+    print(f"🛟 Backup created: {backup_path}")
 
     if removed_ids:
         print(f"\n🗑️  Removing {len(removed_ids)} deleted tracks...")

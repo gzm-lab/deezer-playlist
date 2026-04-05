@@ -29,6 +29,7 @@ ab_not_found.json
 found.json
 not_found.json
 recovered.json
+final_dataset.backup.*.json
 found_from_not_found.json
 still_not_found.json
 truly_not_found.json
