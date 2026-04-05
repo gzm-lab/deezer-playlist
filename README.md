@@ -1,36 +1,36 @@
 # Deezer Playlist Pipeline
 
-Pipeline Python pour transformer les likes Deezer en:
+Python pipeline that turns Deezer likes into:
 
-- dataset musical enrichi
-- clusters de morceaux
-- playlists mensuelles qui tournent dans le temps
+- an enriched music dataset
+- track clusters
+- rotating monthly playlists
 
-Ce README est centré sur l'utilisation actuelle du projet.
+This README reflects the current workflow and commands.
 
-## 1) Ce que fait le projet
+## 1) What the project does
 
-Le pipeline enchaine ces etapes:
+The pipeline runs these steps:
 
-1. export des tracks likes depuis Deezer
-2. enrichissement MusicBrainz (matching)
-3. enrichissement AcousticBrainz (mood, danceability, genre, etc.)
-4. analyse des previews audio (features de signal)
-5. fusion en dataset final
-6. vectorisation + clustering
-7. generation de playlists mensuelles
-8. publication des playlists dans Deezer
-9. nettoyage des anciennes playlists du mois
+1. export liked tracks from Deezer
+2. enrich with MusicBrainz matches
+3. enrich with AcousticBrainz features (mood, danceability, genre, etc.)
+4. analyze audio previews (signal-level features)
+5. merge all data into a final dataset
+6. vectorize and cluster tracks
+7. generate monthly playlists
+8. publish playlists to Deezer
+9. clean up obsolete playlists for the month
 
-## 2) Prerequis
+## 2) Prerequisites
 
 - Python 3.10+
-- ffmpeg installe (necessaire pour pydub)
-- credentials Deezer app
+- ffmpeg installed (required by pydub)
+- Deezer app credentials
 
 ## 3) Installation
 
-Creer et activer un environnement virtuel:
+Create and activate a virtual environment:
 
 ```bash
 python3 -m venv .venv
@@ -38,7 +38,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Creer le fichier .env a la racine:
+Create a `.env` file at the repository root:
 
 ```env
 application_id=YOUR_DEEZER_APP_ID
@@ -47,56 +47,56 @@ application_domain=http://localhost:8080/callback
 MB_USER_AGENT=DeezerMoodCluster/0.1 (contact: your@email.com)
 ```
 
-## 4) Premiere execution (quick start)
+## 4) First run (quick start)
 
-Authentifier Deezer (une fois) et demander tous les scopes utiles:
+Authenticate Deezer once and request all required scopes:
 
 ```bash
 python3 -m tools.deezer_latest_liked --force-auth
 ```
 
-Le script affiche `Token recu (expires=...)`:
+The script prints `Token recu (expires=...)`:
 
-- `expires=0` => token long-terme (pas de reconnexion mensuelle en pratique)
-- `expires=3600` => token court, reconnexion periodique possible
+- `expires=0` => long-lived token (typically no monthly re-login)
+- `expires=3600` => short-lived token (periodic re-login may still be needed)
 
-Construire dataset + clusters + playlists du mois:
+Build dataset + clusters + monthly playlists:
 
 ```bash
 python3 deezer_pipeline.py build-all --month 2026-04
 ```
 
-Publier dans Deezer:
+Publish to Deezer:
 
 ```bash
 python3 deezer_pipeline.py publish-playlists --input monthly_playlists.json
 ```
 
-Supprimer les anciennes playlists du meme mois (garde seulement la serie courante):
+Delete obsolete playlists for the same month (keeps only the current set):
 
 ```bash
 python3 deezer_pipeline.py cleanup-playlists --input monthly_playlists.json
 ```
 
-## 5) Commandes principales
+## 5) Main commands
 
-Point d'entree unique:
+Single entry point:
 
 ```bash
-python3 deezer_pipeline.py <commande>
+python3 deezer_pipeline.py <command>
 ```
 
-Commandes utiles:
+Useful commands:
 
-- build-dataset: reconstruit tout le dataset
-- build-dataset --skip-export: reutilise all_songs.json existant
-- update-dataset: met a jour final_dataset.json avec les nouveaux likes
-- build-playlists --month YYYY-MM: recalcule vecteurs, clusters et playlists
-- publish-playlists --input monthly_playlists.json: cree/met a jour les playlists Deezer
-- cleanup-playlists --input monthly_playlists.json: supprime les anciennes playlists du mois
-- build-all --month YYYY-MM: execute dataset puis playlists (generation locale)
+- `build-dataset`: rebuild the full dataset
+- `build-dataset --skip-export`: reuse existing `all_songs.json`
+- `update-dataset`: incrementally update `final_dataset.json` with Deezer changes
+- `build-playlists --month YYYY-MM`: recompute vectors, clusters, and monthly playlists
+- `publish-playlists --input monthly_playlists.json`: create/update Deezer playlists
+- `cleanup-playlists --input monthly_playlists.json`: delete obsolete playlists for that month
+- `build-all --month YYYY-MM`: run dataset build, then playlist generation (local artifacts)
 
-Exemples:
+Examples:
 
 ```bash
 python3 deezer_pipeline.py build-dataset
@@ -106,37 +106,37 @@ python3 deezer_pipeline.py publish-playlists --input monthly_playlists.json
 python3 deezer_pipeline.py cleanup-playlists --input monthly_playlists.json
 ```
 
-Defaults actuels:
+Current defaults:
 
 - clustering: 12 clusters
-- playlists: max 50 titres par playlist
-- titres sans features audio: inseres aleatoirement dans les playlists generees
+- playlists: max 50 tracks per playlist
+- tracks without audio features: randomly injected into generated playlists
 
-## 6) Fichiers produits
+## 6) Output files
 
-Sorties principales:
+Main artifacts:
 
-- all_songs.json
-- musicbrainz_matched.json
-- acousticbrainz_enriched.json
-- preview_enriched.json
-- final_dataset.json
-- clustering_vectors.json
-- clusters.json
-- monthly_playlists.json
-- monthly_playlists_history.json
+- `all_songs.json`
+- `musicbrainz_matched.json`
+- `acousticbrainz_enriched.json`
+- `preview_enriched.json`
+- `final_dataset.json`
+- `clustering_vectors.json`
+- `clusters.json`
+- `monthly_playlists.json`
+- `monthly_playlists_history.json`
 
-Ces fichiers sont des artefacts locaux et sont ignores par .gitignore.
+These files are local artifacts and are ignored by `.gitignore`.
 
-## 7) Structure du repo
+## 7) Repository structure
 
 ```text
 deezer/
-├── deezer_pipeline.py          # interface utilisateur principale
-├── core/                       # logique partagee
+├── deezer_pipeline.py          # main user entry point
+├── core/                       # shared logic
 │   ├── audio_features.py
 │   └── deezer_api.py
-└── tools/                      # scripts operationnels
+└── tools/                      # operational scripts
 	├── deezer_latest_liked.py
 	├── export_coup_de_coeur.py
 	├── musicbrainz_enrich.py
@@ -146,36 +146,38 @@ deezer/
 	├── update_dataset.py
 	├── prepare_clustering_features.py
 	├── cluster_tracks.py
-	└── generate_monthly_playlists.py
+	├── generate_monthly_playlists.py
+	├── publish_monthly_playlists.py
+	└── cleanup_month_playlists.py
 ```
 
-Regle simple: utilise deezer_pipeline.py pour le quotidien.
+Simple rule: use `deezer_pipeline.py` for day-to-day operations.
 
-## 8) Depannage rapide
+## 8) Troubleshooting
 
-Token Deezer manquant:
+Missing Deezer token:
 
-- relancer: python3 -m tools.deezer_latest_liked
-- forcer une nouvelle auth (scopes complets): python3 -m tools.deezer_latest_liked --force-auth
-- verifier application_domain dans .env
+- run: `python3 -m tools.deezer_latest_liked`
+- force full re-auth (all scopes): `python3 -m tools.deezer_latest_liked --force-auth`
+- verify `application_domain` in `.env`
 
-Permission insuffisante pour suppression de playlists:
+Insufficient permission when deleting playlists:
 
-- relancer l'auth avec --force-auth
-- verifier que le script demande bien: basic_access, manage_library, delete_library, offline_access
+- re-auth with `--force-auth`
+- verify scopes include: `basic_access,manage_library,delete_library,offline_access`
 
-Erreur pydub ou lecture MP3:
+Pydub/MP3 decoding issues:
 
-- verifier que ffmpeg est installe et accessible
+- make sure `ffmpeg` is installed and available in PATH
 
-Pas assez de tracks pour clustering:
+Not enough tracks for clustering:
 
-- verifier que final_dataset.json contient des preview_features
-- si besoin, relancer build-dataset puis build-playlists
+- check that `final_dataset.json` contains `preview_features`
+- if needed, rerun `build-dataset` then `build-playlists`
 
-## 9) Workflow mensuel (manuel)
+## 9) Monthly manual workflow
 
-Ce projet est volontairement opere manuellement chaque mois.
+This project is intentionally run manually every month.
 
 1. Update dataset:
 
@@ -183,19 +185,19 @@ Ce projet est volontairement opere manuellement chaque mois.
 python3 deezer_pipeline.py update-dataset
 ```
 
-2. Regenerer playlists du mois:
+2. Regenerate playlists for the month:
 
 ```bash
 python3 deezer_pipeline.py build-playlists --month YYYY-MM
 ```
 
-3. Publier dans Deezer:
+3. Publish to Deezer:
 
 ```bash
 python3 deezer_pipeline.py publish-playlists --input monthly_playlists.json
 ```
 
-4. Nettoyer les anciennes playlists du mois:
+4. Clean up obsolete playlists for that month:
 
 ```bash
 python3 deezer_pipeline.py cleanup-playlists --input monthly_playlists.json
