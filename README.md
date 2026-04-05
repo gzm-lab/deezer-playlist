@@ -1,5 +1,7 @@
 # Deezer Playlist Pipeline
 
+> 🧒 **In plain English:** You press a button, and the app looks at all the songs you liked on Deezer, groups them by vibe (chill, energetic, happy...), and automatically creates new playlists for you every month!
+
 Python pipeline that turns Deezer likes into:
 
 - an enriched music dataset
